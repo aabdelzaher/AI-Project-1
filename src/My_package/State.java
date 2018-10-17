@@ -23,6 +23,9 @@ public class State implements Comparable<State> {
         return s2.row == row && s2.col == col && s2.dragonGlass == dragonGlass && s2.whiteWalkers.equals(whiteWalkers);
     }
 
+    /**
+     * Hashing the current state to be used
+     */
     @Override
     public int hashCode() {
         long hash = row*31 + this.col*31*31 % mod + dragonGlass*31*31*31;
@@ -38,6 +41,9 @@ public class State implements Comparable<State> {
         return (int)(hash%mod);
     }
 
+    /**
+     * compareTo for comparing between two states so
+     */
     @Override
     public int compareTo(State state) {
         if(row != state.row)

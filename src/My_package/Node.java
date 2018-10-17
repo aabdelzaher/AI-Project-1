@@ -15,25 +15,4 @@ public class Node {
         this.cost = cost;
         this.operator = operator;
     }
-
-    int getHeurestic1(){
-        if(new SaveWestros().test(state))
-            return 0;
-//        return this.state.whiteWalkers.size()/4;
-        if(this.state.whiteWalkers.size()/4 != 0 && this.state.whiteWalkers.size()/4 != 1) {
-            System.err.println("BUGGGGGGGGG :O :O");
-            while(true);
-        }
-//        return Math.min(this.state.whiteWalkers.size()/4, 1);
-        return (int)(state.hashCode()%2);
-//        return 1;
-//        return 0;
-//        return 0;
-    }
-
-    int getHeurestic2(){
-        if(new SaveWestros().test(state))
-            return 0;
-        return 0;
-    }
 }

@@ -8,47 +8,54 @@ import java.util.Comparator;
 public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCost {
 
 
-    static final int BFS = 0, DFS = 1, UniformCost = 2, IterativeDeepening = 3, Greedy = 4, AStar = 5;
-    int MaxM = 4;
-    int MaxN = 4;
+    static final int BFS = 0, DFS = 1, UniformCost = 2, IterativeDeepening = 3, Greedy1 = 4, Greedy2 = 5, AStar1 = 6, AStar2 = 7;
+    int MaxM = 10;
+    int MaxN = 10;
     int MaxGlass = 5;
-    int MaxWhiteWalkers = 4;
-    int MaxObstacles = 0;
+    int MaxWhiteWalkers = 12;
+    int MaxObstacles = 10;
     char[][] grid;
 
 
-    static void print(char[][] g){
-        for (int i = 0; i < g.length; i++) {
-            System.out.println(g[i]);
-        }
+    public SaveWestros(){}
+
+    public SaveWestros(Operator[] o, State s, StateSpace ss, GoalTest gt, PathCost pc) {
+        this.operators = o;
+        this.goalTest = gt;
+        this.pathCost = pc;
+        this.initialState = s;
+        this.stateSpace = ss;
     }
+
+
     public static void main(String[] args) {
         SaveWestros s = new SaveWestros();
         s.genGrid();
         int cnt = 0;
-        for (int k = 0; k < 1000; k++) {
-            s.genGrid();
-            GenericSearch.Triple resutl1 = s.search(s.grid, UniformCost, false);
-            GenericSearch.Triple resutl2 = s.search(s.grid, AStar, false);
-            if(resutl1 != null && resutl2 != null && resutl1.expandedNodes < resutl2.expandedNodes) {
-                cnt++;
-                System.err.println(Arrays.deepToString(s.grid));
-                return;
-            }
+//        for (int k = 0; k < 1000; k++) {
+//            s.genGrid();
+//            GenericSearch.Triple resutl1 = s.search(s.grid, UniformCost, false);
+//            GenericSearch.Triple resutl2 = s.search(s.grid, AStar, false);
+//            if(resutl1 != null && resutl2 != null && resutl1.expandedNodes < resutl2.expandedNodes) {
+//                cnt++;
+//                System.err.println(Arrays.deepToString(s.grid));
+//                return;
+//            }
+//        }
+//        System.out.println(cnt);
+        for (int i = 0; i <= AStar2; i++) {
+            if(i == IterativeDeepening)
+                continue;
+            if(i != BFS)
+            System.out.println(get(i) + ": ");
+            s.search(s.grid, i, false);
+            System.out.println("============================");
         }
-        System.out.println(cnt);
-    }
+        System.out.println(get(IterativeDeepening)+": ");
+        s.search(s.grid, IterativeDeepening, false);
+        System.out.println("============================");
+//        s.search(s.grid, AStar1, true);
 
-    static String get(int i){
-        switch (i){
-            case DFS: return "DFS";
-            case BFS: return "BFS";
-            case AStar: return "A Star";
-            case IterativeDeepening: return "Iterative Deepening";
-            case UniformCost: return "Uniform cost";
-            case Greedy: return "Greedy";
-        }
-        return "Unknown";
     }
 
     GenericSearch.Triple search(char[][] grid, int strategy, boolean visualize){
@@ -59,6 +66,14 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
         s.stateSpace = s;
         s.pathCost = s;
         s.goalTest = s;
+
+        /**
+         * [[O, W, W], [W, ., D], [., ., .]]
+         */
+
+        /**
+         * [[D, ., ., .], [., W, ., W], [., ., O, O], [., ., ., .]]
+         */
 
         /**
          * ....
@@ -76,7 +91,8 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
          * W....
          * WO..J
          */
-//        s.grid = new char[][]{"..WW".toCharArray(), "..D.".toCharArray(), "...W".toCharArray(), "W...".toCharArray()};
+
+//        s.grid = new char[][]{"OWW".toCharArray(), "W.D".toCharArray(), "...".toCharArray()};
 
         for (int i = 0; i < s.grid.length; i++) {
             for (int j = 0; j < s.grid[i].length; j++) {
@@ -90,12 +106,14 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
         State initialState = new State(s.grid.length-1, s.grid[0].length-1, 0, WW);
         s.initialState = initialState;
 
-        print(s.grid, s.initialState);
+        if(strategy == BFS)print(s.grid, s.initialState);
 
         GenericSearch.Triple result = null;
         Operator[] path = null;
         switch(strategy){
             case BFS:
+                System.out.println();
+                System.out.println("BFS:");
                 result = new GenericSearch().genericSearch(s, new Comparator<Node>() {
                     @Override
                     public int compare(Node a, Node b) {
@@ -131,19 +149,37 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
                         break;
                 }
                 break;
-            case Greedy:
+            case Greedy1:
                 result = new GenericSearch().genericSearch(s, new Comparator<Node>() {
                     @Override
                     public int compare(Node a, Node b) {
-                        return a.getHeurestic1()-b.getHeurestic1();
+                        return getHeuristic1(a)- getHeuristic1(b);
                     }
                 }, -1);
                 break;
-            case AStar:
+
+            case Greedy2:
                 result = new GenericSearch().genericSearch(s, new Comparator<Node>() {
                     @Override
                     public int compare(Node a, Node b) {
-                        return (a.cost+a.getHeurestic1())-(b.cost+b.getHeurestic1());
+                        return getHeuristic2(a)- getHeuristic2(b);
+                    }
+                }, -1);
+                break;
+
+            case AStar1:
+                result = new GenericSearch().genericSearch(s, new Comparator<Node>() {
+                    @Override
+                    public int compare(Node a, Node b) {
+                        return (a.cost+ getHeuristic1(a))-(b.cost+ getHeuristic1(b));
+                    }
+                }, -1);
+                break;
+            case AStar2:
+                result = new GenericSearch().genericSearch(s, new Comparator<Node>() {
+                    @Override
+                    public int compare(Node a, Node b) {
+                        return (a.cost+ getHeuristic2(a))-(b.cost+ getHeuristic2(b));
                     }
                 }, -1);
                 break;
@@ -164,9 +200,56 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
         return result;
     }
 
+    /**
+     * The heurestic functions used in A* and Greedy search techniques
+     */
+    int getHeuristic1(Node n){
+        if(new SaveWestros().test(n.state))
+            return 0;
+
+        return ((n.state.whiteWalkers.size() + 2) / 3);
+    }
+
+    int getHeuristic2(Node n){
+        if(new SaveWestros().test(n.state))
+            return 0;
+        int ans = 0;
+        boolean[][] vis = new boolean[grid.length][grid[0].length];
+        ArrayList<Point> WhiteWalkers = new ArrayList<>(n.state.whiteWalkers);
+        for (int i = 0; i < WhiteWalkers.size(); i++) {
+            Point pos = WhiteWalkers.get(i);
+            int[] movesX = {1, 1, 2, 0, 0, -1, -1, -2};
+            int[] movesY = {1, -1, 0, 2, -2, 1, -1, 0};
+            if(!vis[pos.x][pos.y]){
+                vis[pos.x][pos.y] = true;
+                ans += ((dfs(pos.x, pos.y, vis, movesX, movesY)+2) / 3);
+            }
+        }
+        return ans;
+    }
+
+    int dfs(int x, int y, boolean[][] vis, int[] dx, int[] dy){
+        int ans = 1;
+        for (int k = 0; k < dx.length; k++) {
+            int newX = x+dx[k];
+            int newY = y+dy[k];
+
+            if(newX >= 0 && newY >= 0 && newX < grid.length && newY < grid[0].length && grid[newX][newY] == 'W' && !vis[newX][newY]){
+                vis[newX][newY] = true;
+                ans += dfs(newX, newY, vis, dx, dy);
+            }
+        }
+
+        return ans;
+    }
+
+
+    /**
+     * Generating a random grid
+     */
     void genGrid() {
-        int n = (int) (Math.random() * (MaxN - 3) + 4);
-        int m = (int) (Math.random() * (MaxM - 3) + 4);
+        int n = (int) (Math.random() * (MaxN - 3) + 3);
+        int m = (int) (Math.random() * (MaxM - 3) + 3);
         int ww = (int) (Math.random() * (MaxWhiteWalkers - 2) + 3);
         int o = (int) (Math.random() * (MaxObstacles - 2) + 3);
         int dragonStoneR, dragonStoneC;
@@ -205,47 +288,16 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
         grid[n - 1][m - 1] = '.';
     }
 
-    public SaveWestros(){
-
-    }
-
-    public SaveWestros(Operator[] o, State s, StateSpace ss, GoalTest gt, PathCost pc) {
-        this.operators = o;
-        this.goalTest = gt;
-        this.pathCost = pc;
-        this.initialState = s;
-        this.stateSpace = ss;
-    }
-
-    static void print(char[][] g, State s){
-        ArrayList<Point> ww = s.whiteWalkers;
-        int jonRow = s.row;
-        int jonCol = s.col;
-
-        char[][] ret = new char[g.length][];
-        for (int i = 0; i < g.length; i++)
-            ret[i] = g[i].clone();
-
-        for (int i = 0; i < ret.length; i++) {
-            for (int j = 0; j < ret[i].length; j++) {
-                if(ret[i][j] == 'W')
-                    ret[i][j] = '.';
-            }
-        }
-
-        for(Point p: ww)
-            ret[p.x][p.y] = 'W';
-
-        ret[jonRow][jonCol] = 'J';
-
-        print(ret);
-
-    }
-
+    /**
+     * Checking if the state 's' is a goal state
+     */
     public boolean test(State s) {
         return s.whiteWalkers.isEmpty();
     }
 
+    /**
+     * Computing the next state that results from applying an operator 'o' on some state 's'.
+     */
     int[] dx = {0, 0, 1, -1};
     int[] dy = {-1, 1, 0, 0};
 
@@ -305,23 +357,80 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
         return valid(x, y) && (grid[x][y] == '.' || grid[x][y] == 'D' || (grid[x][y] == 'W' && !ww.contains(new Point(x, y))));
     }
 
+    /**
+     * Method returns the cost of applying some operator 'o'.
+     * In this problem the cost is not dependant on the state; therefore, the state is not passed as a parameter.
+     */
     @Override
     public int cost(Operator o) {
         switch (o) {
             case KILL:
                 return 1;
             case PICK:
-                return 50;
+                return 0;
             case UP:
-                return 10;
+                return 0;
             case DOWN:
-                return 10;
+                return 0;
             case RIGHT:
-                return 10;
+                return 0;
             case LEFT:
-                return 10;
+                return 0;
         }
         return 0;
+    }
+
+
+    /**
+     * Methods responsible for printing the grid in a certain state
+     */
+
+    static void print(char[][] g){
+        for (int i = 0; i < g.length; i++) {
+            for (int j = 0; j < g[i].length; j++) {
+                System.out.print("[ " + g[i][j] + " ]");
+            }
+            System.out.println();
+        }
+    }
+
+    static String get(int i){
+        switch (i){
+            case DFS: return "DFS";
+            case BFS: return "BFS";
+            case AStar1: return "A Star 1";
+            case AStar2: return "A Star 2";
+            case IterativeDeepening: return "Iterative Deepening";
+            case UniformCost: return "Uniform cost";
+            case Greedy1: return "Greedy1";
+            case Greedy2: return "Greedy2";
+        }
+        return "Unknown";
+    }
+
+    static void print(char[][] g, State s){
+        ArrayList<Point> ww = s.whiteWalkers;
+        int jonRow = s.row;
+        int jonCol = s.col;
+
+        char[][] ret = new char[g.length][];
+        for (int i = 0; i < g.length; i++)
+            ret[i] = g[i].clone();
+
+        for (int i = 0; i < ret.length; i++) {
+            for (int j = 0; j < ret[i].length; j++) {
+                if(ret[i][j] == 'W')
+                    ret[i][j] = '.';
+            }
+        }
+
+        for(Point p: ww)
+            ret[p.x][p.y] = 'W';
+
+        ret[jonRow][jonCol] = 'J';
+
+        print(ret);
+
     }
 
     void print(Operator[] path, State s){
