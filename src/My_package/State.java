@@ -6,11 +6,11 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class State implements Comparable<State> {
-    public int row;
-    public int col;
-    public int dragonGlass;   //the number of dragon glass carried by the player
-    public ArrayList<Point> whiteWalkers;  //the positions of the white walkers remaining in the grid so far
-    static int mod = BigInteger.probablePrime(30, new Random()).intValue();
+    public int row; // Jon Snow row position
+    public int col; // Jon Snow column position
+    public int dragonGlass;   // The number of dragon glass carried by Jon Snow
+    public ArrayList<Point> whiteWalkers;  // The positions of the white walkers remaining in the grid so far
+
     public State(int x, int y, int DG, ArrayList<Point> WW){
         this.row = x;
         this.col = y;
@@ -24,8 +24,10 @@ public class State implements Comparable<State> {
     }
 
     /**
-     * Hashing the current state to be used
+     * Hashing the current state to be used in saving the state in a Hashset so no repeated states is visited
      */
+
+    static int mod = BigInteger.probablePrime(30, new Random()).intValue(); // This is used for hashing
     @Override
     public int hashCode() {
         long hash = row*31 + this.col*31*31 % mod + dragonGlass*31*31*31;
@@ -42,7 +44,9 @@ public class State implements Comparable<State> {
     }
 
     /**
-     * compareTo for comparing between two states so
+     * compareTo for comparing between two states so states can be saved in treeset so no repeated states is visited.
+     * This is similar to the hashing, It is only implemented as in case of large number of states this is better as
+     * the larger the number of states the more collision happens in the hashing
      */
     @Override
     public int compareTo(State state) {

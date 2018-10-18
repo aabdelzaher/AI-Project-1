@@ -6,7 +6,7 @@ public class Node {
     Operator operator;
     int cost;
     int depth;
-    int insertionTime;
+    int insertionTime;  // used in applying dfs and bfs
 
     public Node(State state, Node parent, Operator operator, int cost, int depth){
         this.state = state;

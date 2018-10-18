@@ -9,11 +9,11 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
 
 
     static final int BFS = 0, DFS = 1, UniformCost = 2, IterativeDeepening = 3, Greedy1 = 4, Greedy2 = 5, AStar1 = 6, AStar2 = 7;
-    int MaxM = 10;
-    int MaxN = 10;
-    int MaxGlass = 5;
-    int MaxWhiteWalkers = 12;
-    int MaxObstacles = 10;
+    int MaxM = 10;  // This controls the maximum possible height of the grid
+    int MaxN = 10;  // This controls the maximum possible width of the grid
+    int MaxGlass = 5;   // The maximum number of dragon glass that Jon can hold at a time
+    int MaxWhiteWalkers = 12;   // This controls the maximum possible number of white walkers in the grid
+    int MaxObstacles = 10;  // This controls the maximum possible number of obstacles in the grid
     char[][] grid;
 
 
@@ -31,30 +31,14 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
     public static void main(String[] args) {
         SaveWestros s = new SaveWestros();
         s.genGrid();
-        int cnt = 0;
-//        for (int k = 0; k < 1000; k++) {
-//            s.genGrid();
-//            GenericSearch.Triple resutl1 = s.search(s.grid, UniformCost, false);
-//            GenericSearch.Triple resutl2 = s.search(s.grid, AStar, false);
-//            if(resutl1 != null && resutl2 != null && resutl1.expandedNodes < resutl2.expandedNodes) {
-//                cnt++;
-//                System.err.println(Arrays.deepToString(s.grid));
-//                return;
-//            }
-//        }
-//        System.out.println(cnt);
+
+        // Running the search algorithm for the same grid using all different strategies
         for (int i = 0; i <= AStar2; i++) {
-            if(i == IterativeDeepening)
-                continue;
             if(i != BFS)
             System.out.println(get(i) + ": ");
             s.search(s.grid, i, false);
             System.out.println("============================");
         }
-        System.out.println(get(IterativeDeepening)+": ");
-        s.search(s.grid, IterativeDeepening, false);
-        System.out.println("============================");
-//        s.search(s.grid, AStar1, true);
 
     }
 
@@ -63,37 +47,14 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
         ArrayList<Point> WW = new ArrayList<>();
         SaveWestros s = new SaveWestros(operators, null, null, null, null);
         s.grid = grid;
+        // The state space, pathCost, goalTest are implemented as interfaces. SaveWestros implements all three interfaces
+        // Therefore, the 'SaveWestros' instance is set as the StateSpace, PathCost and GoalTest
         s.stateSpace = s;
         s.pathCost = s;
         s.goalTest = s;
 
-        /**
-         * [[O, W, W], [W, ., D], [., ., .]]
-         */
 
-        /**
-         * [[D, ., ., .], [., W, ., W], [., ., O, O], [., ., ., .]]
-         */
-
-        /**
-         * ....
-         * ...D
-         * ....
-         * WWWJ
-         */
-
-
-        /**
-         * D.OW.
-         * ...O.
-         * ...W.
-         * ....W
-         * W....
-         * WO..J
-         */
-
-//        s.grid = new char[][]{"OWW".toCharArray(), "W.D".toCharArray(), "...".toCharArray()};
-
+        // Calculating positions of white walkers as it is used in the initial state
         for (int i = 0; i < s.grid.length; i++) {
             for (int j = 0; j < s.grid[i].length; j++) {
                 if(s.grid[i][j] == 'W'){
@@ -106,14 +67,15 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
         State initialState = new State(s.grid.length-1, s.grid[0].length-1, 0, WW);
         s.initialState = initialState;
 
-        if(strategy == BFS)print(s.grid, s.initialState);
+        // Printing the initial grid
+        print(s.grid, s.initialState);
 
         GenericSearch.Triple result = null;
         Operator[] path = null;
+        // According to the strategy the generic search is called with a different comparator (queueing function)
         switch(strategy){
             case BFS:
-                System.out.println();
-                System.out.println("BFS:");
+                // The earlier the node is inserted, the higher it priority
                 result = new GenericSearch().genericSearch(s, new Comparator<Node>() {
                     @Override
                     public int compare(Node a, Node b) {
@@ -122,6 +84,7 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
                 }, -1);
                 break;
             case DFS:
+                // The later the node is inserted, the higher it priority
                 result = new GenericSearch().genericSearch(s, new Comparator<Node>() {
                     @Override
                     public int compare(Node a, Node b) {
@@ -130,6 +93,7 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
                 }, -1);
                 break;
             case UniformCost:
+                // The lower the node cost, the higher it priority
                 result = new GenericSearch().genericSearch(s, new Comparator<Node>() {
                     @Override
                     public int compare(Node a, Node b) {
@@ -138,7 +102,11 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
                 }, -1);
                 break;
             case IterativeDeepening:
-                for (int i = 1;; i++) {
+                // Calculating maximum number of distinct states as calling dfs with higher level
+                // than the maximum number of state (deepest level) is not needed.
+                int maxNodes = grid.length*grid[0].length*(1<<WW.size())*(MaxGlass+1);
+                for (int i = 1; i < maxNodes+10; i++) {
+                    // Same comparator as DFS
                     result = new GenericSearch().genericSearch(s, new Comparator<Node>() {
                         @Override
                         public int compare(Node a, Node b) {
@@ -150,6 +118,7 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
                 }
                 break;
             case Greedy1:
+                // Comparing by the heuristic function 1
                 result = new GenericSearch().genericSearch(s, new Comparator<Node>() {
                     @Override
                     public int compare(Node a, Node b) {
@@ -159,6 +128,7 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
                 break;
 
             case Greedy2:
+                // Comparing by the heuristic function 2
                 result = new GenericSearch().genericSearch(s, new Comparator<Node>() {
                     @Override
                     public int compare(Node a, Node b) {
@@ -168,17 +138,27 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
                 break;
 
             case AStar1:
+                // Comparing by the heuristic function 1 plus the cost
                 result = new GenericSearch().genericSearch(s, new Comparator<Node>() {
                     @Override
                     public int compare(Node a, Node b) {
+                        // in case of having similar priorities (getHeuristic + cost) the nodes are sorted by their hashcode
+                        // This is just some sort of order as sorting alphabetically in the lecture
+                        if((a.cost+ getHeuristic1(a)) == (b.cost+ getHeuristic1(b)))
+                            return a.hashCode()-b.hashCode();
                         return (a.cost+ getHeuristic1(a))-(b.cost+ getHeuristic1(b));
                     }
                 }, -1);
                 break;
             case AStar2:
+                // Comparing by the heuristic function 2 plus the cost
                 result = new GenericSearch().genericSearch(s, new Comparator<Node>() {
                     @Override
                     public int compare(Node a, Node b) {
+                        // in case of having similar priorities (getHeuristic + cost) the nodes are sorted by their hashcode
+                        // This is just some sort of order as sorting alphabetically in the lecture
+                        if((a.cost+ getHeuristic2(a)) == (b.cost+ getHeuristic2(b)))
+                            return a.hashCode() - b.hashCode();
                         return (a.cost+ getHeuristic2(a))-(b.cost+ getHeuristic2(b));
                     }
                 }, -1);
@@ -186,12 +166,12 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
 
         }
 
-        if(result != null) {
+        if(result != null) {    // the solution exists
             path = result.path;
             System.out.println("Expanded Nodes: " + result.expandedNodes);
             System.out.println("Cost: " + result.cost);
             System.out.println("Path: " + Arrays.toString(path));
-            if(visualize)
+            if(visualize)   // printing the grid after each step to the solution
                 s.print(path, s.initialState);
         }else{
             System.out.println("No Solution");
@@ -248,11 +228,11 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
      * Generating a random grid
      */
     void genGrid() {
-        int n = (int) (Math.random() * (MaxN - 3) + 3);
-        int m = (int) (Math.random() * (MaxM - 3) + 3);
-        int ww = (int) (Math.random() * (MaxWhiteWalkers - 2) + 3);
-        int o = (int) (Math.random() * (MaxObstacles - 2) + 3);
-        int dragonStoneR, dragonStoneC;
+        int n = (int) (Math.random() * (MaxN - 3) + 3); // height
+        int m = (int) (Math.random() * (MaxM - 3) + 3); // width
+        int ww = (int) (Math.random() * (MaxWhiteWalkers - 2) + 3); // number of white walkers
+        int o = (int) (Math.random() * (MaxObstacles - 2) + 3); // number of obstacles
+        int dragonStoneR, dragonStoneC; // position of dragonstone
         while (true) {
             dragonStoneR = (int) (Math.random() * n);
             dragonStoneC = (int) (Math.random() * m);
@@ -272,6 +252,7 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
 
         grid[n - 1][m - 1] = 'J';
         grid[dragonStoneR][dragonStoneC] = 'D';
+        // placing the white walkers
         for (int i = 0; i < ww; i++) {
             int r = (int) (Math.random() * n);
             int c = (int) (Math.random() * m);
@@ -279,6 +260,7 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
                 grid[r][c] = 'W';
         }
 
+        // placing the obstacles
         for (int i = 0; i < o; i++) {
             int r = (int) (Math.random() * n);
             int c = (int) (Math.random() * m);
@@ -310,11 +292,12 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
                     break;
                 ArrayList<Point> new_whiteWalkers = new ArrayList<>(s.whiteWalkers);
                 boolean killed = false;
+                // looping over all adjacent cells and check for white walkers
                 for (int k = 0; k < dx.length; k++) {
                     int new_X = s.row + dx[k];
                     int new_Y = s.col + dy[k];
 
-                    if (valid(new_X, new_Y) && grid[new_X][new_Y] == 'W') {
+                    if (notObstacle(new_X, new_Y) && grid[new_X][new_Y] == 'W') {
                         if (new_whiteWalkers.contains(new Point(new_X, new_Y))) {
                             new_whiteWalkers.remove(new Point(new_X, new_Y));
                             killed = true;
@@ -322,14 +305,14 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
                     }
                 }
                 nextState.whiteWalkers = new_whiteWalkers;
-                if (killed)
+                if (killed) // the dragonglass is used
                     nextState.dragonGlass--;
                 break;
             case PICK:
                 if (s.dragonGlass < MaxGlass && grid[s.row][s.col] == 'D')
                     nextState.dragonGlass += 1;
                 break;
-            case UP:
+            case UP:    // before each move the cell to which Jon will move is checked to be notObstacle
                 if (s.row > 0 && validMove(s.row-1, s.col, s.whiteWalkers))
                     nextState.row -= 1;
                 break;
@@ -349,17 +332,20 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
         return nextState;
     }
 
-    boolean valid(int x, int y) {
+    // The cell is in the grid and is not an obstacle
+    boolean notObstacle(int x, int y) {
         return x >= 0 && x < grid.length && y >= 0 && y < grid[x].length && grid[x][y] != 'O';
     }
 
+    // The grid is empty or the place of dragonstone
     boolean validMove(int x, int y, ArrayList<Point> ww){
-        return valid(x, y) && (grid[x][y] == '.' || grid[x][y] == 'D' || (grid[x][y] == 'W' && !ww.contains(new Point(x, y))));
+        return notObstacle(x, y) && (grid[x][y] == '.' || grid[x][y] == 'D' || (grid[x][y] == 'W' && !ww.contains(new Point(x, y))));
     }
 
     /**
      * Method returns the cost of applying some operator 'o'.
      * In this problem the cost is not dependant on the state; therefore, the state is not passed as a parameter.
+     * All operators have 0 cost excpet the kill.
      */
     @Override
     public int cost(Operator o) {
@@ -385,6 +371,7 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
      * Methods responsible for printing the grid in a certain state
      */
 
+    // printing a 2d-grid
     static void print(char[][] g){
         for (int i = 0; i < g.length; i++) {
             for (int j = 0; j < g[i].length; j++) {
@@ -394,6 +381,7 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
         }
     }
 
+    // returning a string representing the strategy
     static String get(int i){
         switch (i){
             case DFS: return "DFS";
@@ -408,6 +396,7 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
         return "Unknown";
     }
 
+    // Updating the grid g with the current state (some white walkers are dead for instance) then prints the updated grid
     static void print(char[][] g, State s){
         ArrayList<Point> ww = s.whiteWalkers;
         int jonRow = s.row;
@@ -433,6 +422,7 @@ public class SaveWestros extends Problem implements GoalTest, StateSpace, PathCo
 
     }
 
+    // Takes a path and prints the grid after each step of the path
     void print(Operator[] path, State s){
         State cur = s;
         for (int i = 0; i < path.length; i++) {
